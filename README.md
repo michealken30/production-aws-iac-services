@@ -45,14 +45,6 @@ Ps: I would have used public modules but i decide to use custom so i expressly s
   - Error log patterns
 
 
-### Production Safety
-- S3 backend with state versioning
-- DynamoDB state locking
-- Deployment protection on ALB
-- Health check grace period
-- Auto-scaling policies
-- Encrypted root volumes
-
 ## Why EC2?
 
 This solution uses EC2 instead of Fargate because:
@@ -99,11 +91,14 @@ terraform apply -auto-approve
 
 ### Step 2: Setup the prod Infrastructure
 
-```bash
+
 cd environments/prod
 terraform init
 terraform plan
 terraform apply -auto-approve
+
+
+```
 
 ## AI Usage Disclosure
 

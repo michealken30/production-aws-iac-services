@@ -111,4 +111,5 @@ All code has been reviewed, understood, and is owned by me. The architectural de
 
 
 
+<img width="1440" height="900" alt="Screenshot 2026-02-23 at 12 14 13 AM" src="https://github.com/user-attachments/assets/a3514546-ee2d-4b93-b18f-d21b73748b0e" />
 

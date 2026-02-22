@@ -109,8 +109,7 @@ All code has been reviewed, understood, and is owned by me. The architectural de
 
 ## terraform apply output
 
-![Uploading Screenshot 2026-02-23 at 12.15.49 AM.png…]()
-
+<img width="1440" height="900" alt="Screenshot 2026-02-23 at 12 15 49 AM" src="https://github.com/user-attachments/assets/8dc68d49-86a9-49f2-b340-5bd570e24c18" />
 
 
 

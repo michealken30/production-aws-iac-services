@@ -24,10 +24,11 @@ module "networking" {
 module "compute" {
   source = "../../modules/compute"
 
-  environment              = var.environment
+  environment             = var.environment
   vpc_id                  = module.networking.vpc_id
   public_subnet_ids       = module.networking.public_subnet_ids
   private_subnet_ids      = module.networking.private_subnet_ids
+  nat_gateway_ids         = module.networking.nat_gateway_ids
   
   instance_type           = var.instance_type
   instance_count          = var.instance_count

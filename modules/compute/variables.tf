@@ -13,6 +13,13 @@ variable "public_subnet_ids" {
   type        = list(string)
 }
 
+
+variable "nat_gateway_ids" {
+  description = "NAT Gateway IDs to ensure NAT is ready before ASG launches"
+  type        = list(string)
+  default     = []
+}
+
 variable "private_subnet_ids" {
   description = "List of private subnet IDs for EC2 instances"
   type        = list(string)

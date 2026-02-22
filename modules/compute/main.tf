@@ -124,7 +124,7 @@ resource "aws_iam_instance_profile" "ec2" {
   }, var.tags)
 }
 
-# ATTACH AWS MANAGED POLICIES (This is crucial - use these instead of custom policy)
+
 resource "aws_iam_role_policy_attachment" "ssm_core" {
   role       = aws_iam_role.ec2.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
@@ -135,7 +135,7 @@ resource "aws_iam_role_policy_attachment" "cloudwatch" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
-# Additional custom policy for your specific needs
+# Additional custom policy
 resource "aws_iam_role_policy" "ec2_custom" {
   name = "${var.environment}-ec2-custom-policy"
   role = aws_iam_role.ec2.id
@@ -227,6 +227,8 @@ resource "aws_autoscaling_group" "app" {
   health_check_type = "ELB"
   health_check_grace_period = 300
 
+
+
   tag {
     key                 = "Name"
     value              = "${var.environment}-asg"
@@ -241,6 +243,8 @@ resource "aws_autoscaling_group" "app" {
       propagate_at_launch = true
     }
   }
+
+  depends_on = [var.nat_gateway_ids]
 }
 
 
@@ -252,7 +256,7 @@ resource "aws_lb" "app" {
   security_groups    = [aws_security_group.alb.id]
   subnets            = var.public_subnet_ids
 
-  enable_deletion_protection = true
+  enable_deletion_protection = false
   drop_invalid_header_fields = true
 
   tags = merge({

@@ -59,6 +59,8 @@ resource "aws_eip" "nat" {
   count  = var.single_nat_gateway ? 1 : length(var.availability_zones)
   domain = "vpc"
 
+  depends_on = [aws_internet_gateway.main]
+
   tags = merge({
     Name        = "${var.environment}-nat-eip-${count.index + 1}"
     Environment = var.environment

@@ -1,115 +1,60 @@
 #!/bin/bash
-# EC2 User Data Script - Sets up a simple HTTP server
-
 set -e
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
-
 echo "Starting user data script execution..."
-
+# Wait for network
+sleep 20
 # Update system
 yum update -y
-
-# Install dependencies
-yum install -y python3 curl jq
-
-# Create a simple HTTP server application
-cat > /home/ec2-user/app.py <<'EOF'
-#!/usr/bin/env python3
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import json
-import socket
-import datetime
-import os
-
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == '/health':
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            
-            health_status = {
-                'status': 'healthy',
-                'timestamp': str(datetime.datetime.now()),
-                'hostname': socket.gethostname(),
-                'instance_id': os.getenv('INSTANCE_ID', 'unknown'),
-                'version': '1.0.0'
-            }
-            
-            self.wfile.write(json.dumps(health_status).encode())
-        
-        elif self.path == '/':
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            
-            html = f"""
-            <html>
-                <head><title>EC2 HTTP Server</title></head>
-                <body>
-                    <h1>Hello from EC2!</h1>
-                    <p>Hostname: {socket.gethostname()}</p>
-                    <p>Instance ID: {os.getenv('INSTANCE_ID', 'unknown')}</p>
-                    <p>Time: {datetime.datetime.now()}</p>
-                    <p><a href="/health">Health Check</a></p>
-                </body>
-            </html>
-            """
-            self.wfile.write(html.encode())
-        
-        else:
-            self.send_response(404)
-            self.end_headers()
-            self.wfile.write(b'404 Not Found')
-    
-    def log_message(self, format, *args):
-        # Suppress log messages
-        pass
-
-def run_server():
-    port = 80
-    server_address = ('', port)
-    httpd = HTTPServer(server_address, HealthHandler)
-    print(f'Starting HTTP server on port {port}...')
-    httpd.serve_forever()
-
-if __name__ == '__main__':
-    run_server()
+# Install nginx via Amazon Linux Extras (correct way for AL2)
+amazon-linux-extras install nginx1 -y
+# Install Node.js 16 (compatible with glibc 2.26 on Amazon Linux 2)
+curl -fsSL https://rpm.nodesource.com/setup_16.x | bash -
+yum install -y nodejs git
+# Verify versions
+node -v
+npm -v
+nginx -v
+# Clone the repo
+cd /home/ec2-user
+git clone https://github.com/michealken30/spotify-clone.git
+cd spotify-clone
+# Install dependencies and build
+npm install
+npm run build
+# Copy build output to nginx web root
+cp -r dist/* /usr/share/nginx/html/
+# Configure nginx
+cat > /etc/nginx/conf.d/spotify-clone.conf <<'EOF'
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    # Handle React client-side routing
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    # Health check endpoint for ALB
+    location /health {
+        return 200 '{"status":"healthy"}';
+        add_header Content-Type application/json;
+    }
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
 EOF
-
-# Get instance ID from metadata
-TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
-
-# Set environment variable
+# Remove default nginx config to avoid conflicts
+rm -f /etc/nginx/conf.d/default.conf
+# Get instance metadata
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
 echo "export INSTANCE_ID=$INSTANCE_ID" >> /etc/environment
-
-# Make the script executable
-chmod +x /home/ec2-user/app.py
-
-# Create systemd service
-# NOTE: Running as root to allow binding to privileged port 80
-cat > /etc/systemd/system/http-server.service <<EOF
-[Unit]
-Description=Simple HTTP Server
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/home/ec2-user
-Environment=INSTANCE_ID=$INSTANCE_ID
-ExecStart=/usr/bin/python3 /home/ec2-user/app.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Install and configure CloudWatch agent
+# Install CloudWatch agent
 yum install -y amazon-cloudwatch-agent
-
 cat > /opt/aws/amazon-cloudwatch-agent/etc/config.json <<'EOF'
 {
   "agent": {
@@ -121,16 +66,19 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/config.json <<'EOF'
       "files": {
         "collect_list": [
           {
-            "file_path": "/var/log/messages",
-            "log_group_name": "/ec2/http-server",
-            "log_stream_name": "{instance_id}/messages",
-            "timestamp_format": "%b %d %H:%M:%S"
+            "file_path": "/var/log/nginx/access.log",
+            "log_group_name": "/ec2/spotify-clone",
+            "log_stream_name": "{instance_id}/nginx-access"
+          },
+          {
+            "file_path": "/var/log/nginx/error.log",
+            "log_group_name": "/ec2/spotify-clone",
+            "log_stream_name": "{instance_id}/nginx-error"
           },
           {
             "file_path": "/var/log/user-data.log",
-            "log_group_name": "/ec2/http-server",
-            "log_stream_name": "{instance_id}/user-data",
-            "timestamp_format": "%Y-%m-%d %H:%M:%S"
+            "log_group_name": "/ec2/spotify-clone",
+            "log_stream_name": "{instance_id}/user-data"
           }
         ]
       }
@@ -139,51 +87,29 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/config.json <<'EOF'
   "metrics": {
     "metrics_collected": {
       "cpu": {
-        "measurement": [
-          "cpu_usage_idle",
-          "cpu_usage_iowait",
-          "cpu_usage_user",
-          "cpu_usage_system"
-        ],
+        "measurement": ["cpu_usage_idle", "cpu_usage_user", "cpu_usage_system"],
         "metrics_collection_interval": 60,
         "totalcpu": true
       },
-      "disk": {
-        "measurement": [
-          "used_percent"
-        ],
-        "metrics_collection_interval": 60,
-        "resources": [
-          "*"
-        ]
-      },
       "mem": {
-        "measurement": [
-          "mem_used_percent"
-        ],
+        "measurement": ["mem_used_percent"],
         "metrics_collection_interval": 60
       },
-      "netstat": {
-        "measurement": [
-          "tcp_established",
-          "tcp_time_wait"
-        ],
-        "metrics_collection_interval": 60
+      "disk": {
+        "measurement": ["used_percent"],
+        "metrics_collection_interval": 60,
+        "resources": ["*"]
       }
     }
   }
 }
 EOF
-
-# Start CloudWatch agent
-/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/config.json -s
-
-# Enable and start the HTTP server
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config -m ec2 \
+  -c file:/opt/aws/amazon-cloudwatch-agent/etc/config.json -s
+# Enable and start nginx
 systemctl daemon-reload
-systemctl enable http-server
-systemctl start http-server
-
-# Verify service is running
-systemctl status http-server --no-pager
-
-echo "User data script completed successfully"
+systemctl enable nginx
+systemctl start nginx
+systemctl status nginx --no-pager
+echo "User data script completed successfully".   

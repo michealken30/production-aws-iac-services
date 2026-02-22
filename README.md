@@ -107,7 +107,15 @@ AI was used to accelerate the initial scaffolding of this Terraform project. Spe
 
 All code has been reviewed, understood, and is owned by me. The architectural decisions, module boundaries, and security choices were made by me, and am prepared to explain and defend every line.
 
-## image of my application repo have built before and i used to test
+## terraform apply output
+
+![Uploading Screenshot 2026-02-23 at 12.15.49 AM.png…]()
+
+
+
+
+
+## image of an application have built in time past and i used it to test through the user data
 
 
 

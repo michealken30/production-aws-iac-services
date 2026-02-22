@@ -9,11 +9,11 @@ instance_type           = "t3.micro"
 instance_count          = 3
 container_port          = 80
 health_check_path       = "/health"
-ssh_cidr_blocks         = ["0.0.0.0/0"]  # Add your office IPs here for SSH access
+ssh_cidr_blocks         = ["0.0.0.0/0"]  # work ip safer
 
-min_size               = 3
-max_size               = 10
-desired_capacity       = 3
+min_size               = 2
+max_size               = 4
+desired_capacity       = 2
 
 enable_detailed_monitoring = true
 root_volume_size       = 20

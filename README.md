@@ -10,16 +10,16 @@ The infrastructure consists of:
 Ps: I would have used public modules but i decide to use custom modules so i can expressly show how infra are designed.
 
 - **Networking Layer**: VPC with public/private subnets across 2 AZs
-- **Compute Layer**: Auto Scaling Group of EC2 instances with a simple HTTP server
+- **Compute Layer**: Auto Scaling Group of EC2 instances with a spotify clone applicatione
 - **Load Balancing**: Application Load Balancer for traffic distribution
 - **Observability**: CloudWatch dashboards, logs, and comprehensive alerts
-- **State Management**: S3 backend with s3 native lockin
+- **State Management**: S3 backend with s3 native locking
 
 ## Key Features
 
 ### High Availability
 - Multi-AZ deployment (2 availability zones)
-- Auto Scaling Group with minimum 3 instances
+- Auto Scaling Group with minimum 2 instances
 - Load balancing with health checks
 - NAT Gateway per AZ for high availability
 
@@ -96,7 +96,7 @@ terraform apply -auto-approve
 AI was used to accelerate the initial scaffolding of this Terraform project. Specifically Generating boilerplate resource blocks and module interfaces
 
 
-All code has been reviewed, understood, and is owned by me. The architectural decisions, module boundaries, and security choices were made by me, and am prepared to explain and defend every line.
+All code has been reviewed, understood, and is owned by me. The architectural decisions, module boundaries, and security choices were made by me, and i am prepared to explain and defend every line.
 
 ## terraform apply output
 

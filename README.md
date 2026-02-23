@@ -1,5 +1,5 @@
 # Production EC2-based Service Infrastructure on AWS
-PS: I would have used Ecs fargate which is simplier to set up but to maintain cost effective especially for startup with few users and to own my infrastracture and also make sure the appliction is always available among other things i decided to go with Ec2 setup.
+PS: I would have used Ecs fargate which is simplier to set up but to be cost effective especially for startup with few users and to own my infrastracture and also make sure the appliction is always available among other things i decided to go with Ec2 setup.
 
 This Terraform configuration deploys a highly available, stateless HTTP service on AWS using EC2 instances behind an Application Load Balancer.
 
@@ -7,7 +7,7 @@ This Terraform configuration deploys a highly available, stateless HTTP service 
 
 The infrastructure consists of:
 
-Ps: I would have used public modules but i decide to use custom so i expressly show how does things are designed.
+Ps: I would have used public modules but i decide to use custom modules so i can expressly show how infra are designed.
 
 - **Networking Layer**: VPC with public/private subnets across 2 AZs
 - **Compute Layer**: Auto Scaling Group of EC2 instances with a simple HTTP server

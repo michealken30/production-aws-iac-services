@@ -62,15 +62,6 @@ This solution uses EC2 instead of Fargate because:
 - Auto-scaling policies
 - Encrypted root volumes
 
-## Deployment Instructions
-
-### Prerequisites
-
-1. AWS CLI configured with appropriate credentials
-2. Terraform >= 1.0 installed
-3. S3 bucket for state management
-
-
 
 ## Deployment Instructions
 
